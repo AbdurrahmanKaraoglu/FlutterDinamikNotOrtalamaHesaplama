@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dinamik_not/constants/app_constants.dart';
 import 'package:flutter_dinamik_not/helper/data_helper.dart';
+import 'package:flutter_dinamik_not/model/ders.dart';
+import 'package:flutter_dinamik_not/widgets/ders_listesi.dart';
+import 'package:flutter_dinamik_not/widgets/harf_dropdown_widget.dart';
+import 'package:flutter_dinamik_not/widgets/kredi_dropdown_widget.dart';
 import 'package:flutter_dinamik_not/widgets/ortalama_goster.dart';
 
 class OrtalamaHesaplaPage extends StatefulWidget {
@@ -12,43 +16,62 @@ class OrtalamaHesaplaPage extends StatefulWidget {
 
 class _OrtalamaHesaplaPageState extends State<OrtalamaHesaplaPage> {
   var formKey = GlobalKey<FormState>();
-  double secilenDeger = 4;
+  double secilenHarfDegeri = 4;
+  double secilenKrediDegeri = 1;
+  String girilenDersAdi = '';
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          title: Center(
-            child: Text(
-              Sabitler.baslikText,
-              style: Sabitler.baslikStyle,
-            ),
+      resizeToAvoidBottomInset: false,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Center(
+          child: Text(
+            Sabitler.baslikText,
+            style: Sabitler.baslikStyle,
           ),
         ),
-        body: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: _buildForm(),
-                ),
-                Expanded(
-                  flex: 1,
-                  child: OrtalamaGoster(ortalama: 3.423, dersSayisi: 1),
-                )
-              ],
-            ),
-            Expanded(
-              child: Container(
-                child: Text("Liste Buraya Gelecek"),
-                color: Colors.blue,
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: _buildForm(),
               ),
-            )
-          ],
-        ));
+              Expanded(
+                flex: 1,
+                child: OrtalamaGoster(
+                    ortalama: DataHelper.ortalamaHesapla(), dersSayisi: DataHelper.tumEklenenDersler.length),
+              )
+            ],
+          ),
+          Expanded(
+            child: DersListesi(
+              onElemanCikarildi: (index) {
+                DataHelper.tumEklenenDersler.removeAt(index);
+                setState(() {});
+              },
+            ),
+
+            // child: Container(
+            //   // margin: EdgeInsets.only(bottom: 0, left: 20, right: 20, top: 20),
+            //   // decoration: const BoxDecoration(
+            //   //   borderRadius: BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
+            //   //   color: Colors.blue,
+            //   // ),
+
+            //   child: DersListesi(),
+            //   color: Colors.blue,
+            // ),
+          )
+        ],
+      ),
+    );
   }
 
   Widget _buildForm() {
@@ -56,21 +79,43 @@ class _OrtalamaHesaplaPageState extends State<OrtalamaHesaplaPage> {
       key: formKey,
       child: Column(
         children: [
-          _buildTextFormField(),
+          Padding(
+            padding: Sabitler.yatayPadding8,
+            child: _buildTextFormField(),
+          ),
+          SizedBox(height: 5),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildHarfler(),
-              IconButton(
-                onPressed: () {},
-                icon: Icon(Icons.arrow_forward_ios_outlined),
+              Expanded(
+                child: Padding(
+                  padding: Sabitler.yatayPadding8,
+                  child: HarfDropdownWidget(
+                    onHarfSecildi: (harf) {
+                      secilenHarfDegeri = harf;
+                    },
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: Sabitler.yatayPadding8,
+                  child: KrediDropdownWidget(
+                    onKrediSecildi: (kredi) {
+                      secilenKrediDegeri = kredi;
+                    },
+                  ),
+                ),
               ),
               IconButton(
-                onPressed: () {},
-                icon: Icon(Icons.arrow_forward_ios_outlined),
+                onPressed: _dersEkleveOrtalamaHesapla,
+                icon: Icon(Icons.arrow_forward_ios_sharp),
+                color: Sabitler.anaRenk,
+                iconSize: 30,
               ),
             ],
           ),
+          SizedBox(height: 5),
         ],
       ),
     );
@@ -78,31 +123,38 @@ class _OrtalamaHesaplaPageState extends State<OrtalamaHesaplaPage> {
 
   Widget _buildTextFormField() {
     return TextFormField(
+      onSaved: (deger) {
+        setState(() {
+          girilenDersAdi = deger!;
+        });
+      },
+      validator: (value) {
+        if (value!.length <= 0) {
+          return 'Ders Adını Giriniz';
+        } else {
+          return null;
+        }
+      },
       decoration: InputDecoration(
         hintText: 'Matematik',
-        border: OutlineInputBorder(borderRadius: Sabitler.borderRadius),
+        border: OutlineInputBorder(borderRadius: Sabitler.borderRadius, borderSide: BorderSide.none),
         filled: true,
         fillColor: Sabitler.anaRenk.shade100.withOpacity(0.3),
       ),
     );
   }
 
-  _buildHarfler() {
-    return Container(
-      padding: Sabitler.dropDownPadding,
-      decoration: BoxDecoration(color: Sabitler.anaRenk.shade100.withOpacity(0.3), borderRadius: Sabitler.borderRadius),
-      child: DropdownButton<double>(
-        elevation: 16,
-        iconEnabledColor: Sabitler.anaRenk.shade200,
-        value: secilenDeger,
-        onChanged: (value) {
-          setState(() {
-            secilenDeger = value!;
-          });
-        },
-        items: DataHelper.tumDerslerinHarfleri(),
-        underline: Container(),
-      ),
-    );
+  void _dersEkleveOrtalamaHesapla() {
+    if (formKey.currentState!.validate()) {
+      formKey.currentState!.save();
+      var eklenecekDers = Ders(ad: girilenDersAdi, harfDegeri: secilenHarfDegeri, krediDegeri: secilenKrediDegeri);
+
+      DataHelper.dersEkle(eklenecekDers);
+      print(DataHelper.tumEklenenDersler);
+      // print(DataHelper.ortalamaHesapla());
+      //print(eklenecekDers);
+
+      setState(() {});
+    }
   }
 }
